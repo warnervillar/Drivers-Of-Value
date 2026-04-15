@@ -36,13 +36,13 @@
 
     <div id="survey" class="screen">
         <h2 id="survey-title">Valuation Survey</h2>
-        <p>Rate how important each factor is (1 = Low, 5 = High):</p>
+        <p>Rate factor importance (1 = Low, 5 = High):</p>
         <div class="likert-group">
-            <p>Instructor Quality (Reviews/Rating):</p>
+            <p>Instructor Quality:</p>
             <div class="likert-options" id="q1"></div>
         </div>
         <div class="likert-group">
-            <p>Grade Distribution (Ease of A):</p>
+            <p>Grade Distribution:</p>
             <div class="likert-options" id="q2"></div>
         </div>
         <div class="likert-group">
@@ -54,7 +54,7 @@
 
     <div id="task" class="screen">
         <h2>Trial <span id="tCount">1</span> / 20</h2>
-        <p>Select the course you would be most likely to enroll in:</p>
+        <p>Select your preferred course:</p>
         <div class="choice-row">
             <div id="cardA" class="rmp-card" onclick="choose('A')"></div>
             <div id="cardB" class="rmp-card" onclick="choose('B')"></div>
@@ -62,18 +62,18 @@
     </div>
 
     <div id="wait" class="screen" style="text-align:center;">
-        <h2>Processing Responses...</h2>
+        <h2>Processing...</h2>
         <div id="timer">30</div>
     </div>
 
     <div id="finish" class="screen" style="text-align:center;">
         <h2>Study Complete</h2>
-        <p>Thank you! Your participation is greatly appreciated.</p>
+        <p>Thank you! Your data has been recorded.</p>
     </div>
 </div>
 
 <script>
-    // YOUR NEW WEB APP URL
+    // YOUR WEB APP URL
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyMal32hB0SliAZQ0UkyLvOc7r2xZiv_K1CjK96JRQOxvpXQhhsLAZE4F0xNH_KwRZ0iQ/exec"; 
     
     let pId, currentTrial = 0, phase = "pre";
@@ -136,4 +136,118 @@
             b: {iq: 4.0, take: "82%", diff: 2.7, quote: "Very helpful and nice.", img: "average2.png", time: "8:00 AM"}
         },
         {
-            a: {iq: 4.6, take: "94%", diff: 1.5, quote: "
+            a: {iq: 4.6, take: "94%", diff: 1.5, quote: "Easiest A of my life.", img: "easy2.png", time: "11:30 AM"},
+            b: {iq: 1.2, take: "1%", diff: 5.0, quote: "Literal nightmare. I failed.", img: "hard2.png", time: "11:30 AM"}
+        },
+        {
+            a: {iq: 3.2, take: "58%", diff: 3.2, quote: "He tries his best, but boring material.", img: "average2.png", time: "9:00 AM"},
+            b: {iq: 4.5, take: "91%", diff: 3.9, quote: "Hard class but amazing professor.", img: "hard.png", time: "3:00 PM"}
+        },
+        {
+            a: {iq: 2.9, take: "45%", diff: 2.6, quote: "A bit of an ego, but not too difficult.", img: "easy.png", time: "10:00 AM"},
+            b: {iq: 4.8, take: "99%", diff: 2.2, quote: "Makes everyone feel smart.", img: "easy2.png", time: "8:00 AM"}
+        },
+        {
+            a: {iq: 4.2, take: "88%", diff: 3.3, quote: "Expect a lot of work, but accessible.", img: "average.png", time: "1:00 PM"},
+            b: {iq: 1.4, take: "4%", diff: 4.6, quote: "Zero personality and zero help.", img: "hard.png", time: "1:00 PM"}
+        },
+        {
+            a: {iq: 3.7, take: "70%", diff: 2.4, quote: "Pretty easy class. Drops lowest quiz.", img: "easy2.png", time: "8:00 AM"},
+            b: {iq: 3.8, take: "72%", diff: 3.8, quote: "Tough grader but interesting.", img: "hard2.png", time: "11:00 AM"}
+        },
+        {
+            a: {iq: 4.9, take: "100%", diff: 1.9, quote: "Best teacher at this school!", img: "easy.png", time: "4:00 PM"},
+            b: {iq: 1.0, take: "0%", diff: 5.0, quote: "Total disaster.", img: "hard.png", time: "8:00 AM"}
+        }
+    ];
+
+    ['q1','q2','q3'].forEach(q => {
+        const div = document.getElementById(q);
+        for(let i=1; i<=5; i++) {
+            div.innerHTML += `<label style="margin:5px;"><input type="radio" name="${q}" value="${i}"> ${i}</label>`;
+        }
+    });
+
+    function start() {
+        pId = document.getElementById('pId').value.trim();
+        if(!pId) return alert("Please enter an ID.");
+        show('survey');
+    }
+
+    function show(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    // FIRE AND FORGET - Doesn't wait for Google
+    function sendData(payload) {
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            cache: 'no-cache',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    }
+
+    function submitSurvey() {
+        const q1 = document.querySelector('input[name="q1"]:checked')?.value;
+        const q2 = document.querySelector('input[name="q2"]:checked')?.value;
+        const q3 = document.querySelector('input[name="q3"]:checked')?.value;
+        if(!q1 || !q2 || !q3) return alert("Please answer all questions.");
+
+        // Send data but don't wait for it
+        sendData({dataType:"survey", ID:pId, phase, q1, q2, q3});
+        
+        // Move to next screen immediately
+        if(phase === "pre") { 
+            show('task'); 
+            renderTrial(); 
+        } else { 
+            show('finish'); 
+        }
+    }
+
+    function renderTrial() {
+        document.getElementById('tCount').innerText = currentTrial + 1;
+        const t = trials[currentTrial];
+        ['A','B'].forEach(letter => {
+            const data = t[letter.toLowerCase()];
+            const rClass = data.iq < 3 ? "awful" : (data.iq < 4 ? "average" : "");
+            document.getElementById('card' + letter).innerHTML = `
+                <div class="rating-box ${rClass}">${data.iq}</div>
+                <span style="font-size:12px; font-weight:bold;">Diff: ${data.diff} | ${data.take} take again</span>
+                <div class="rmp-quote">"${data.quote}"</div>
+                <img src="${data.img}" class="dist-img">
+                <p><b>Time:</b> ${data.time}</p>
+            `;
+        });
+    }
+
+    function choose(choice) {
+        const t = trials[currentTrial];
+        sendData({dataType:"trial", ID:pId, trialNum:currentTrial+1, choice, optionA: t.a, optionB: t.b});
+
+        currentTrial++;
+        if(currentTrial < trials.length) renderTrial();
+        else countdown();
+    }
+
+    function countdown() {
+        show('wait');
+        let seconds = 30;
+        const timer = setInterval(() => {
+            seconds--;
+            document.getElementById('timer').innerText = seconds;
+            if(seconds <= 0) {
+                clearInterval(timer);
+                phase = "post";
+                document.getElementById('survey-title').innerText = "Post-Task Valuation Survey";
+                document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+                show('survey');
+            }
+        }, 1000);
+    }
+</script>
+</body>
+</html>
