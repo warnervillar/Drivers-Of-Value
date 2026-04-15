@@ -18,7 +18,7 @@
         .rating-box.awful { background: #ff3b3b; color: #fff; }
         .rating-box.average { background: #ffff00; }
         .rmp-quote { font-style: italic; background: #f1f1f1; padding: 15px; margin: 15px 0; border-left: 4px solid #007bff; font-size: 14px; min-height: 80px; }
-        .dist-img { width: 100%; border-radius: 5px; margin-top: 10px; }
+        .dist-img { width: 100%; border-radius: 5px; margin-top: 10px; border: 1px solid #eee; }
         .likert-group { margin: 25px 0; padding: 15px; background: #f1f1f1; border-radius: 8px; }
         .likert-options { display: flex; justify-content: space-between; margin-top: 10px; }
         #timer { font-size: 48px; font-weight: bold; color: #007bff; margin: 20px; }
@@ -36,13 +36,13 @@
 
     <div id="survey" class="screen">
         <h2 id="survey-title">Valuation Survey</h2>
-        <p>Rate factor importance (1 = Low, 5 = High):</p>
+        <p>Rate how important each factor is to you (1 = Not Important, 5 = Extremely Important):</p>
         <div class="likert-group">
-            <p>Instructor Quality:</p>
+            <p>Instructor Quality (Reviews/Rating):</p>
             <div class="likert-options" id="q1"></div>
         </div>
         <div class="likert-group">
-            <p>Grade Distribution:</p>
+            <p>Grade Distribution (Ease of A):</p>
             <div class="likert-options" id="q2"></div>
         </div>
         <div class="likert-group">
@@ -54,7 +54,7 @@
 
     <div id="task" class="screen">
         <h2>Trial <span id="tCount">1</span> / 20</h2>
-        <p>Select your preferred course:</p>
+        <p>Select the course you would be most likely to enroll in:</p>
         <div class="choice-row">
             <div id="cardA" class="rmp-card" onclick="choose('A')"></div>
             <div id="cardB" class="rmp-card" onclick="choose('B')"></div>
@@ -62,103 +62,102 @@
     </div>
 
     <div id="wait" class="screen" style="text-align:center;">
-        <h2>Processing...</h2>
+        <h2>Processing Responses...</h2>
         <div id="timer">30</div>
     </div>
 
     <div id="finish" class="screen" style="text-align:center;">
         <h2>Study Complete</h2>
-        <p>Thank you! Your data has been recorded.</p>
+        <p>Thank you for your participation. Your data has been recorded.</p>
     </div>
 </div>
 
 <script>
-    // YOUR WEB APP URL
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwbBaKTrM6YM163ioP2tKxC7kdl6z5Mi0i7cw43OkscaFiQUDGGmVPF62VgG7PoekD5Fg/exec"; 
     
     let pId, currentTrial = 0, phase = "pre";
 
-    // Trial Data (The 20 trials we built)
+    // Trials updated with variety images: easy2, average2, hard2
     const trials = [
         {
             a: {iq: 4.2, take: "95%", diff: 3.2, quote: "A gem among instructors. Excellent lecturer...", img: "average.png", time: "10:00 AM"},
             b: {iq: 1.2, take: "3%", diff: 4.2, quote: "Absolutely atrocious. Makes mistakes every lecture...", img: "hard.png", time: "1:00 PM"}
         },
         {
-            a: {iq: 4.9, take: "100%", diff: 1.8, quote: "Best professor. Teaches material perfectly...", img: "easy.png", time: "8:00 AM"},
-            b: {iq: 3.5, take: "55%", diff: 3.0, quote: "He's okay. A bit boring but straightforward.", img: "average.png", time: "1:00 PM"}
+            a: {iq: 4.9, take: "100%", diff: 1.8, quote: "Best professor. Teaches material perfectly...", img: "easy2.png", time: "8:00 AM"},
+            b: {iq: 3.5, take: "55%", diff: 3.0, quote: "He's okay. A bit boring but straightforward.", img: "average2.png", time: "1:00 PM"}
         },
         {
             a: {iq: 4.5, take: "90%", diff: 2.5, quote: "Super engaging and makes the content feel easy.", img: "easy.png", time: "8:00 AM"},
-            b: {iq: 4.6, take: "92%", diff: 2.4, quote: "Incredible mentor. You will learn so much.", img: "easy.png", time: "2:30 PM"}
+            b: {iq: 4.6, take: "92%", diff: 2.4, quote: "Incredible mentor. You will learn so much.", img: "easy2.png", time: "2:30 PM"}
         },
         {
-            a: {iq: 2.1, take: "15%", diff: 4.5, quote: "Extremely difficult grader. Expects expert level.", img: "hard.png", time: "11:00 AM"},
+            a: {iq: 2.1, take: "15%", diff: 4.5, quote: "Extremely difficult grader. Expects expert level.", img: "hard2.png", time: "11:00 AM"},
             b: {iq: 4.8, take: "98%", diff: 2.0, quote: "The kindest professor. Truly wants everyone to get an A.", img: "easy.png", time: "8:00 AM"}
         },
         {
-            a: {iq: 3.5, take: "55%", diff: 3.2, quote: "A bit disorganized, but a nice person.", img: "average.png", time: "9:30 AM"},
+            a: {iq: 3.5, take: "55%", diff: 3.2, quote: "A bit disorganized, but a nice person.", img: "average2.png", time: "9:30 AM"},
             b: {iq: 3.6, take: "58%", diff: 3.1, quote: "Standard course. Follow the syllabus.", img: "average.png", time: "1:00 PM"}
         },
         {
             a: {iq: 1.5, take: "5%", diff: 4.8, quote: "Avoid at all costs. The curve is non-existent.", img: "hard.png", time: "12:00 PM"},
-            b: {iq: 2.0, take: "10%", diff: 4.0, quote: "Very dry lectures. Hard to stay awake.", img: "hard.png", time: "4:00 PM"}
+            b: {iq: 2.0, take: "10%", diff: 4.0, quote: "Very dry lectures. Hard to stay awake.", img: "hard2.png", time: "4:00 PM"}
         },
         {
-            a: {iq: 4.7, take: "96%", diff: 3.8, quote: "Amazing teacher but be ready to work hard.", img: "hard.png", time: "10:30 AM"},
+            a: {iq: 4.7, take: "96%", diff: 3.8, quote: "Amazing teacher but be ready to work hard.", img: "hard2.png", time: "10:30 AM"},
             b: {iq: 2.8, take: "40%", diff: 2.1, quote: "Boring but an easy A. Reads off slides.", img: "easy.png", time: "10:30 AM"}
         },
         {
             a: {iq: 4.1, take: "85%", diff: 2.9, quote: "Solid choice. Simple explanations.", img: "average.png", time: "8:00 AM"},
-            b: {iq: 4.0, take: "82%", diff: 3.0, quote: "Great energy in class.", img: "average.png", time: "3:30 PM"}
+            b: {iq: 4.0, take: "82%", diff: 3.0, quote: "Great energy in class.", img: "average2.png", time: "3:30 PM"}
         },
         {
             a: {iq: 3.0, take: "50%", diff: 3.5, quote: "He's fine. Not great, not terrible.", img: "average.png", time: "11:00 AM"},
             b: {iq: 4.9, take: "100%", diff: 4.5, quote: "Life-changing, but the hardest class ever.", img: "hard.png", time: "11:00 AM"}
         },
         {
-            a: {iq: 1.1, take: "2%", diff: 4.9, quote: "I learned nothing. Save yourself.", img: "hard.png", time: "8:00 AM"},
-            b: {iq: 3.8, take: "75%", diff: 2.5, quote: "Good prof, easy grader. Cheat sheets allowed.", img: "easy.png", time: "5:00 PM"}
+            a: {iq: 1.1, take: "2%", diff: 4.9, quote: "I learned nothing. Save yourself.", img: "hard2.png", time: "8:00 AM"},
+            b: {iq: 3.8, take: "75%", diff: 2.5, quote: "Good prof, easy grader. Cheat sheets allowed.", img: "easy2.png", time: "5:00 PM"}
         },
         {
             a: {iq: 4.4, take: "88%", diff: 2.2, quote: "Hilarious and the class is a breeze.", img: "easy.png", time: "9:00 AM"},
             b: {iq: 4.3, take: "87%", diff: 3.5, quote: "Fantastic lecturer. Study hard.", img: "hard.png", time: "1:30 PM"}
         },
         {
-            a: {iq: 2.5, take: "25%", diff: 3.8, quote: "Very rude when you ask questions.", img: "hard.png", time: "10:00 AM"},
-            b: {iq: 2.6, take: "30%", diff: 2.0, quote: "Doesn't care, but tests are easy.", img: "easy.png", time: "10:00 AM"}
+            a: {iq: 2.5, take: "25%", diff: 3.8, quote: "Very rude when you ask questions.", img: "hard2.png", time: "10:00 AM"},
+            b: {iq: 2.6, take: "30%", diff: 2.0, quote: "Doesn't care, but tests are easy.", img: "easy2.png", time: "10:00 AM"}
         },
         {
             a: {iq: 5.0, take: "100%", diff: 4.0, quote: "Literally the goat. Hard grader.", img: "hard.png", time: "8:00 AM"},
-            b: {iq: 1.8, take: "8%", diff: 3.0, quote: "Lost my midterm paper twice.", img: "average.png", time: "12:00 PM"}
+            b: {iq: 1.8, take: "8%", diff: 3.0, quote: "Lost my midterm paper twice.", img: "average2.png", time: "12:00 PM"}
         },
         {
             a: {iq: 3.9, take: "80%", diff: 2.8, quote: "Solid lecturer. Most people get Bs.", img: "average.png", time: "2:00 PM"},
-            b: {iq: 4.0, take: "82%", diff: 2.7, quote: "Very helpful and nice.", img: "average.png", time: "8:00 AM"}
+            b: {iq: 4.0, take: "82%", diff: 2.7, quote: "Very helpful and nice.", img: "average2.png", time: "8:00 AM"}
         },
         {
-            a: {iq: 4.6, take: "94%", diff: 1.5, quote: "Easiest A of my life.", img: "easy.png", time: "11:30 AM"},
-            b: {iq: 1.2, take: "1%", diff: 5.0, quote: "Literal nightmare. I failed.", img: "hard.png", time: "11:30 AM"}
+            a: {iq: 4.6, take: "94%", diff: 1.5, quote: "Easiest A of my life.", img: "easy2.png", time: "11:30 AM"},
+            b: {iq: 1.2, take: "1%", diff: 5.0, quote: "Literal nightmare. I failed.", img: "hard2.png", time: "11:30 AM"}
         },
         {
-            a: {iq: 3.2, take: "58%", diff: 3.2, quote: "Tries his best, but boring material.", img: "average.png", time: "9:00 AM"},
+            a: {iq: 3.2, take: "58%", diff: 3.2, quote: "He tries his best, but boring material.", img: "average2.png", time: "9:00 AM"},
             b: {iq: 4.5, take: "91%", diff: 3.9, quote: "Hard class but amazing professor.", img: "hard.png", time: "3:00 PM"}
         },
         {
             a: {iq: 2.9, take: "45%", diff: 2.6, quote: "A bit of an ego, but not too difficult.", img: "easy.png", time: "10:00 AM"},
-            b: {iq: 4.8, take: "99%", diff: 2.2, quote: "Makes everyone feel smart.", img: "easy.png", time: "8:00 AM"}
+            b: {iq: 4.8, take: "99%", diff: 2.2, quote: "Makes everyone feel smart.", img: "easy2.png", time: "8:00 AM"}
         },
         {
             a: {iq: 4.2, take: "88%", diff: 3.3, quote: "Expect a lot of work, but accessible.", img: "average.png", time: "1:00 PM"},
             b: {iq: 1.4, take: "4%", diff: 4.6, quote: "Zero personality and zero help.", img: "hard.png", time: "1:00 PM"}
         },
         {
-            a: {iq: 3.7, take: "70%", diff: 2.4, quote: "Pretty easy class. Drops lowest quiz.", img: "easy.png", time: "8:00 AM"},
-            b: {iq: 3.8, take: "72%", diff: 3.8, quote: "Tough grader but interesting.", img: "hard.png", time: "11:00 AM"}
+            a: {iq: 3.7, take: "70%", diff: 2.4, quote: "Pretty easy class. Drops lowest quiz.", img: "easy2.png", time: "8:00 AM"},
+            b: {iq: 3.8, take: "72%", diff: 3.8, quote: "Tough grader but interesting.", img: "hard2.png", time: "11:00 AM"}
         },
         {
             a: {iq: 4.9, take: "100%", diff: 1.9, quote: "Best teacher at this school!", img: "easy.png", time: "4:00 PM"},
-            b: {iq: 1.0, take: "0%", diff: 5.0, quote: "Total disaster. Disaster.", img: "hard.png", time: "8:00 AM"}
+            b: {iq: 1.0, take: "0%", diff: 5.0, quote: "Total disaster.", img: "hard.png", time: "8:00 AM"}
         }
     ];
 
@@ -184,8 +183,10 @@
         const q1 = document.querySelector('input[name="q1"]:checked')?.value;
         const q2 = document.querySelector('input[name="q2"]:checked')?.value;
         const q3 = document.querySelector('input[name="q3"]:checked')?.value;
-        if(!q1 || !q2 || !q3) return alert("Answer all questions.");
-        await fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({dataType:"survey", ID:pId, phase, q1, q2, q3})});
+        if(!q1 || !q2 || !q3) return alert("Please answer all questions.");
+
+        await fetch(WEB_APP_URL, {method: 'POST', mode: 'no-cors', body: JSON.stringify({dataType:"survey", ID:pId, phase, q1, q2, q3})});
+        
         if(phase === "pre") { show('task'); renderTrial(); }
         else { show('finish'); }
     }
@@ -198,7 +199,7 @@
             const rClass = data.iq < 3 ? "awful" : (data.iq < 4 ? "average" : "");
             document.getElementById('card' + letter).innerHTML = `
                 <div class="rating-box ${rClass}">${data.iq}</div>
-                <span style="font-size:12px; font-weight:bold;">Diff: ${data.diff} | ${data.take} Take Again</span>
+                <span style="font-size:12px; font-weight:bold;">Diff: ${data.diff} | ${data.take} take again</span>
                 <div class="rmp-quote">"${data.quote}"</div>
                 <img src="${data.img}" class="dist-img">
                 <p><b>Time:</b> ${data.time}</p>
@@ -208,7 +209,7 @@
 
     async function choose(choice) {
         const t = trials[currentTrial];
-        await fetch(WEB_APP_URL, {method:'POST', mode:'no-cors', body:JSON.stringify({dataType:"trial", ID:pId, trialNum:currentTrial+1, choice, optionA:t.a, optionB:t.b})});
+        await fetch(WEB_APP_URL, {method: 'POST', mode: 'no-cors', body: JSON.stringify({dataType:"trial", ID:pId, trialNum:currentTrial+1, choice, optionA: t.a, optionB: t.b})});
         currentTrial++;
         if(currentTrial < trials.length) renderTrial();
         else countdown();
@@ -216,11 +217,11 @@
 
     function countdown() {
         show('wait');
-        let s = 30;
+        let seconds = 30;
         const timer = setInterval(() => {
-            s--;
-            document.getElementById('timer').innerText = s;
-            if(s <= 0) {
+            seconds--;
+            document.getElementById('timer').innerText = seconds;
+            if(seconds <= 0) {
                 clearInterval(timer);
                 phase = "post";
                 document.getElementById('survey-title').innerText = "Post-Task Valuation Survey";
